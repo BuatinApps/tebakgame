@@ -7,46 +7,39 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
+            font-family: 'Poppins', sans-serif;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            background-color: #f0f0f0;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
             margin: 0;
         }
-        .game-info {
-            margin-bottom: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
+        .game-info, #level-info {
+            color: white;
+            text-shadow: 1px 1px 3px black;
+            font-size: 1.4em;
+            margin-bottom: 10px;
         }
         .game-container {
             display: grid;
-            grid-template-columns: repeat(3, 100px); /* Contoh 3 pasang kartu */
-            grid-gap: 10px;
-            margin-bottom: 20px;
-            max-width: 90vw;
+            grid-gap: 12px;
+            margin-top: 20px;
         }
         .card {
             width: 100px;
             height: 100px;
-            background-color: #ddd;
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2em;
+            perspective: 1000px;
             cursor: pointer;
             user-select: none;
-            perspective: 1000px;
         }
         .card-inner {
-            position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.3s;
+            position: relative;
             transform-style: preserve-3d;
+            transition: transform 0.5s ease;
         }
         .card.flipped .card-inner {
             transform: rotateY(180deg);
@@ -56,97 +49,64 @@
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
+            border-radius: 8px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            border-radius: 5px;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
         }
         .card-front {
-            background-color: #eee;
-            font-size: 2em;
+            background: #eee;
         }
         .card-back {
-            background-color: #007bff;
+            background: #4f46e5;
             color: white;
-            font-size: 1.5em;
-            /* Tambahkan ini untuk menyembunyikan kartu belakang di awal */
             transform: rotateY(180deg);
         }
         .card.matched .card-back {
-            background-color: green;
-            opacity: 0.7;
-            /* Pastikan tetap terlihat saat cocok */
-            transform: rotateY(180deg);
+            background: #10b981;
+            opacity: 0.8;
         }
-        .card.matched .card-front {
-            /* Sembunyikan sisi depan saat cocok */
-            opacity: 0;
-        }
-        .card.matched {
-            pointer-events: none;
-        }
-        #level-info {
-            margin-bottom: 10px;
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #007bff;
-            text-align: center;
-        }
-        /* Styling untuk level 3 */
-        .question-container {
-            background-color: #fff;
-            border-radius: 10px;
+        .rental-item {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
             padding: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
             text-align: center;
-        }
-        .question-title {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .question-text {
-            font-size: 1.2em;
-            margin-bottom: 20px;
-            line-height: 1.4;
+            margin-top: 20px;
         }
         .answer-input {
-            width: 100%;
+            width: 70%;
             padding: 10px;
-            margin-bottom: 15px;
+            margin-top: 10px;
             border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1em;
+            border-radius: 8px;
         }
-        .submit-button {
-            background-color: #007bff;
+        .select-button {
+            background: #9333ea;
             color: white;
-            border: none;
             padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 1.1em;
+            margin-top: 10px;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
-        .submit-button:hover {
-            background-color: #0056b3;
+        .select-button:hover {
+            background: #7e22ce;
         }
         .feedback-message {
             color: red;
             margin-top: 10px;
-            min-height: 20px;
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body>
     <div id="level-info">Level: <span id="level-display">1</span></div>
-    <div class="game-info">
-        Poin: <span id="poin">0</span> | Waktu: <span id="waktu"></span>
-    </div>
-    <div class="game-container">
-    </div>
+    <div class="game-info">Poin: <span id="poin">0</span> | Waktu: <span id="waktu"></span></div>
+    <div class="game-container"></div>
 
     <script>
         const gameContainer = document.querySelector('.game-container');
@@ -158,40 +118,27 @@
         let firstCard, secondCard;
         let lockBoard = false;
         let poin = 0;
-        let level = 1; // Kita mulai dari level 1
-        let jumlahPasangKartu = 3; // Untuk level awal
-        let waktuSisa = 50; // Waktu dalam detik
+        let level = 1;
+        let jumlahPasangKartu = 3;
+        let waktuSisa = 50;
         let timerInterval;
-        const MAX_LEVEL = 20; // Level maksimum
+        const MAX_LEVEL = 20;
 
-        // Fungsi untuk membuat kartu berdasarkan jumlah pasangan
         function buatKartu(jumlahPasang) {
-            gameContainer.innerHTML = ''; // Bersihkan container sebelum membuat kartu baru
+            gameContainer.innerHTML = '';
             const gambar = [];
             for (let i = 1; i <= jumlahPasang; i++) {
-                gambar.push(i.toString());
-                gambar.push(i.toString());
+                gambar.push(i.toString(), i.toString());
             }
-            acakGambar(gambar);
+            gambar.sort(() => 0.5 - Math.random());
 
-            // Hitung jumlah kolom yang sesuai berdasarkan jumlah kartu
             const jumlahKartu = jumlahPasang * 2;
-            let kolom;
-            if (jumlahKartu <= 9) {
-                kolom = 3; // 3x3 grid
-            } else if (jumlahKartu <= 16) {
-                kolom = 4; // 4x4 grid
-            } else if (jumlahKartu <= 25) {
-                kolom = 5; // 5x5 grid
-            } else if (jumlahKartu <= 36) {
-                kolom = 6; // 6x6 grid
-            } else {
-                kolom = Math.ceil(Math.sqrt(jumlahKartu)); // Hitung jumlah kolom yang optimal
-            }
+            let kolom = Math.ceil(Math.sqrt(jumlahKartu));
+            gameContainer.style.gridTemplateColumns = `repeat(${kolom}, 100px)`;
 
             gambar.forEach(gbr => {
                 const card = document.createElement('div');
-                card.classList.add('card');
+                card.className = 'card';
                 card.dataset.framework = gbr;
                 card.innerHTML = `
                     <div class="card-inner">
@@ -201,19 +148,9 @@
                 `;
                 gameContainer.appendChild(card);
             });
+
             cards = document.querySelectorAll('.card');
             cards.forEach(card => card.addEventListener('click', flipCard));
-
-            // Atur tata letak grid berdasarkan jumlah kartu
-            gameContainer.style.gridTemplateColumns = `repeat(${kolom}, 100px)`;
-        }
-
-        // Fungsi untuk mengacak array gambar (Fisher-Yates)
-        function acakGambar(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
         }
 
         function flipCard() {
@@ -230,34 +167,25 @@
 
             secondCard = this;
             lockBoard = true;
-
             checkForMatch();
         }
 
         function checkForMatch() {
-            let isMatch = firstCard.dataset.framework === secondCard.dataset.framework;
-
+            const isMatch = firstCard.dataset.framework === secondCard.dataset.framework;
             if (isMatch) {
-                disableCards();
-                tambahPoin();
+                firstCard.classList.add('matched');
+                secondCard.classList.add('matched');
+                poin += 10;
+                poinDisplay.textContent = poin;
+                resetBoard();
                 cekSelesai();
             } else {
-                unflipCards();
+                setTimeout(() => {
+                    firstCard.classList.remove('flipped');
+                    secondCard.classList.remove('flipped');
+                    resetBoard();
+                }, 1000);
             }
-        }
-
-        function disableCards() {
-            firstCard.classList.add('matched');
-            secondCard.classList.add('matched');
-            resetBoard();
-        }
-
-        function unflipCards() {
-            setTimeout(() => {
-                firstCard.classList.remove('flipped');
-                secondCard.classList.remove('flipped');
-                resetBoard();
-            }, 1000);
         }
 
         function resetBoard() {
@@ -265,109 +193,40 @@
             [firstCard, secondCard] = [null, null];
         }
 
-        function tambahPoin() {
-            poin += 10; // Berikan 10 poin setiap kali berhasil mencocokkan
-            poinDisplay.textContent = poin;
-        }
-
         function cekSelesai() {
-            const matchedCards = document.querySelectorAll('.card.matched');
-            if (matchedCards.length === jumlahPasangKartu * 2) {
-                // Level selesai
-                
+            const matched = document.querySelectorAll('.card.matched');
+            if (matched.length === jumlahPasangKartu * 2) {
                 setTimeout(() => {
-                    alert(`Selamat! Level ${level} selesai dengan poin ${poin}.`);
+                    alert(`Selamat! Level ${level} selesai.`);
                     level++;
-                    
-                    if (level <= MAX_LEVEL) {
-                        levelDisplay.textContent = level;
-                        jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
-                        waktuSisa += 20; // Tambah waktu 20 detik
-                        
-                        // Khusus level 3, tampilkan pertanyaan
-                        if (level === 3) {
-                            buatPertanyaanLevel3();
-                        } else {
-                            buatKartu(jumlahPasangKartu); // Buat kartu untuk level baru
-                            startTimer(); // Restart timer untuk level baru
-                        }
-                    } else {
-                        // Game selesai setelah mencapai level maksimum
+                    if (level > MAX_LEVEL) {
                         clearInterval(timerInterval);
-                        alert(`Selamat! Anda telah menyelesaikan semua ${MAX_LEVEL} level dengan poin ${poin}!`);
+                        alert('Game Selesai!');
+                    } else {
+                        levelDisplay.textContent = level;
+                        jumlahPasangKartu++;
+                        waktuSisa += 30;
+                        buatKartu(jumlahPasangKartu);
                     }
                 }, 500);
             }
         }
 
-        function buatPertanyaanLevel3() {
-            // Tidak perlu menghentikan timer di level 3 - biarkan tetap berjalan
-            gameContainer.innerHTML = `
-                <div class="question-container">
-                    <div class="question-title">Pertanyaan Level 3</div>
-                    <div class="question-text">Siapakah nama presiden indonesia saat ini?</div>
-                    <input type="text" id="jawabanPemain" placeholder="Ketik jawaban di sini" class="answer-input">
-                    <button id="submitJawaban" class="submit-button">Jawab</button>
-                    <div id="pesanJawaban" class="feedback-message"></div>
-                </div>
-            `;
-            const submitJawabanButton = document.getElementById('submitJawaban');
-            submitJawabanButton.addEventListener('click', jawabPertanyaanLevel3);
-            
-            // Lanjutkan timer di level 3 - PENTING: JANGAN HENTIKAN TIMER
-            startTimer();
-        }
-
-        function jawabPertanyaanLevel3() {
-            const jawabanPemainInput = document.getElementById('jawabanPemain');
-            const pesanJawaban = document.getElementById('pesanJawaban');
-            const jawabanPemain = jawabanPemainInput.value.toLowerCase().trim();
-
-            if (jawabanPemain === 'prabowo subianto') {
-                alert(`Benar! Level 3 selesai. Lanjut ke level berikutnya.`);
-                level = 4; // Pastikan level diatur dengan benar
-                levelDisplay.textContent = level;
-                jumlahPasangKartu = 6; // Level 4 memiliki 6 pasang kartu
-                waktuSisa += 7; // Tambah waktu
-                buatKartu(jumlahPasangKartu);
-                startTimer(); // Mulai timer untuk level baru
-            } else {
-                pesanJawaban.textContent = 'Jawaban salah! Coba lagi.';
-            }
-        }
-
         function startTimer() {
-            clearInterval(timerInterval); // Pastikan timer sebelumnya sudah berhenti
+            clearInterval(timerInterval);
             waktuDisplay.textContent = waktuSisa;
-            
             timerInterval = setInterval(() => {
                 waktuSisa--;
                 waktuDisplay.textContent = waktuSisa;
-                
                 if (waktuSisa <= 0) {
                     clearInterval(timerInterval);
-                    alert(`Waktu habis! Anda mendapatkan poin ${poin} hingga level ${level}.`);
-                    
-                    // Opsi untuk restart game
-                    if (confirm("Ingin mulai game lagi?")) {
-                        resetGame();
-                    }
+                    alert('Waktu habis!');
+                    location.reload();
                 }
             }, 1000);
         }
 
-        function resetGame() {
-            level = 1;
-            levelDisplay.textContent = level;
-            poin = 0;
-            poinDisplay.textContent = poin;
-            jumlahPasangKartu = 3;
-            waktuSisa = 50;
-            buatKartu(jumlahPasangKartu);
-            startTimer();
-        }
-
-        // Inisialisasi game
+        // Inisialisasi
         buatKartu(jumlahPasangKartu);
         startTimer();
     </script>
