@@ -109,6 +109,7 @@
 
         // Fungsi untuk membuat kartu berdasarkan jumlah pasangan
         function buatKartu(jumlahPasang) {
+            gameContainer.innerHTML = ''; // Bersihkan container sebelum membuat kartu baru
             const gambar = [];
             for (let i = 1; i <= jumlahPasang; i++) {
                 gambar.push(i.toString());
@@ -144,7 +145,7 @@
         }
 
         function flipCard() {
-            if (lockBoard) return;
+            if (lockBoard || level === 3) return; // Jangan bisa flip kartu di level 3
             if (this === firstCard || this.classList.contains('matched')) return;
 
             this.classList.add('flipped');
@@ -199,20 +200,60 @@
 
         function cekSelesai() {
             const matchedCards = document.querySelectorAll('.card.matched');
-            if (matchedCards.length === jumlahPasangKartu * 2) {
+            if (level < 3 && matchedCards.length === jumlahPasangKartu * 2) {
                 clearInterval(timerInterval);
-                alert(`Selamat! Level ${level} selesai dengan poin ${poin}. Lanjut ke level berikutnya?`);
+                alert(`Selamat! Level ${level} selesai dengan poin ${poin}.`);
                 level++;
                 jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
-                waktuSisa = 30; // Reset waktu
+                waktuSisa += 7; // Tambah waktu 7 detik
                 gameContainer.innerHTML = ''; // Bersihkan kartu lama
-                buatKartu(jumlahPasangKartu); // Buat kartu untuk level baru
+                if (level === 3) {
+                    buatPertanyaanLevel3();
+                } else {
+                    buatKartu(jumlahPasangKartu); // Buat kartu untuk level baru
+                    startTimer();
+                }
+            } else if (level === 3) {
+                // Penanganan selesai level 3 ada di fungsi jawabPertanyaanLevel3
+            }
+        }
+
+        function buatPertanyaanLevel3() {
+            gameContainer.innerHTML = `
+                <h2>Pertanyaan Level 3</h2>
+                <p>Siapakah nama asli si koboy yang ada di parkiran cengkeh?</p>
+                <input type="text" id="jawabanPemain" placeholder="Ketik jawaban di sini">
+                <button id="submitJawaban">Jawab</button>
+                <p id="pesanJawaban"></p>
+            `;
+            const submitJawabanButton = document.getElementById('submitJawaban');
+            submitJawabanButton.addEventListener('click', jawabPertanyaanLevel3);
+            // Timer tetap berjalan di level 3
+        }
+
+        function jawabPertanyaanLevel3() {
+            const jawabanPemainInput = document.getElementById('jawabanPemain');
+            const pesanJawaban = document.getElementById('pesanJawaban');
+            const jawabanPemain = jawabanPemainInput.value.toLowerCase().trim();
+
+            if (jawabanPemain === 'dayat') {
+                clearInterval(timerInterval);
+                alert(`Benar! Level 3 selesai. Lanjut ke level berikutnya?`);
+                level++;
+                jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
+                waktuSisa += 7; // Tambah waktu
+                gameContainer.innerHTML = '';
+                buatKartu(jumlahPasangKartu);
                 startTimer();
+            } else {
+                pesanJawaban.textContent = 'Jawaban salah!';
+                // Mungkin tambahkan batasan percobaan atau konsekuensi lainnya
             }
         }
 
         function startTimer() {
             waktuDisplay.textContent = waktuSisa;
+            clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 waktuSisa--;
                 waktuDisplay.textContent = waktuSisa;
