@@ -104,7 +104,7 @@
         let poin = 0;
         let level = 1; // Kita mulai dari level 1
         let jumlahPasangKartu = 3; // Untuk level awal
-        let waktuSisa = 30; // Waktu dalam detik
+        let waktuSisa = 50; // Waktu dalam detik
         let timerInterval;
 
         // Fungsi untuk membuat kartu berdasarkan jumlah pasangan
@@ -205,7 +205,7 @@
                 alert(`Selamat! Level ${level} selesai dengan poin ${poin}.`);
                 level++;
                 jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
-                waktuSisa += 7; // Tambah waktu 7 detik
+                waktuSisa += 10; // Tambah waktu 10 detik
                 gameContainer.innerHTML = ''; // Bersihkan kartu lama
                 if (level === 3) {
                     buatPertanyaanLevel3();
