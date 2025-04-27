@@ -26,6 +26,7 @@
             grid-template-columns: repeat(3, 100px); /* Contoh 3 pasang kartu */
             grid-gap: 10px;
             margin-bottom: 20px;
+            max-width: 90vw;
         }
         .card {
             width: 100px;
@@ -75,7 +76,7 @@
             background-color: green;
             opacity: 0.7;
             /* Pastikan tetap terlihat saat cocok */
-            transform: rotateY(0deg);
+            transform: rotateY(180deg);
         }
         .card.matched .card-front {
             /* Sembunyikan sisi depan saat cocok */
@@ -84,19 +85,74 @@
         .card.matched {
             pointer-events: none;
         }
+        #level-info {
+            margin-bottom: 10px;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007bff;
+            text-align: center;
+        }
+        /* Styling untuk level 3 */
+        .question-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .question-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .question-text {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .submit-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+        .feedback-message {
+            color: red;
+            margin-top: 10px;
+            min-height: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
+    <div id="level-info">Level: <span id="level-display">1</span></div>
     <div class="game-info">
         Poin: <span id="poin">0</span> | Waktu: <span id="waktu"></span>
     </div>
     <div class="game-container">
-        </div>
+    </div>
 
     <script>
         const gameContainer = document.querySelector('.game-container');
         const poinDisplay = document.getElementById('poin');
         const waktuDisplay = document.getElementById('waktu');
+        const levelDisplay = document.getElementById('level-display');
         let cards = [];
         let hasFlippedCard = false;
         let firstCard, secondCard;
@@ -106,6 +162,7 @@
         let jumlahPasangKartu = 3; // Untuk level awal
         let waktuSisa = 50; // Waktu dalam detik
         let timerInterval;
+        const MAX_LEVEL = 20; // Level maksimum
 
         // Fungsi untuk membuat kartu berdasarkan jumlah pasangan
         function buatKartu(jumlahPasang) {
@@ -116,6 +173,21 @@
                 gambar.push(i.toString());
             }
             acakGambar(gambar);
+
+            // Hitung jumlah kolom yang sesuai berdasarkan jumlah kartu
+            const jumlahKartu = jumlahPasang * 2;
+            let kolom;
+            if (jumlahKartu <= 9) {
+                kolom = 3; // 3x3 grid
+            } else if (jumlahKartu <= 16) {
+                kolom = 4; // 4x4 grid
+            } else if (jumlahKartu <= 25) {
+                kolom = 5; // 5x5 grid
+            } else if (jumlahKartu <= 36) {
+                kolom = 6; // 6x6 grid
+            } else {
+                kolom = Math.ceil(Math.sqrt(jumlahKartu)); // Hitung jumlah kolom yang optimal
+            }
 
             gambar.forEach(gbr => {
                 const card = document.createElement('div');
@@ -133,7 +205,7 @@
             cards.forEach(card => card.addEventListener('click', flipCard));
 
             // Atur tata letak grid berdasarkan jumlah kartu
-            gameContainer.style.gridTemplateColumns = `repeat(${Math.sqrt(jumlahPasang * 2)}, 100px)`;
+            gameContainer.style.gridTemplateColumns = `repeat(${kolom}, 100px)`;
         }
 
         // Fungsi untuk mengacak array gambar (Fisher-Yates)
@@ -145,7 +217,7 @@
         }
 
         function flipCard() {
-            if (lockBoard || level === 3) return; // Jangan bisa flip kartu di level 3
+            if (lockBoard) return;
             if (this === firstCard || this.classList.contains('matched')) return;
 
             this.classList.add('flipped');
@@ -200,35 +272,50 @@
 
         function cekSelesai() {
             const matchedCards = document.querySelectorAll('.card.matched');
-            if (level < 3 && matchedCards.length === jumlahPasangKartu * 2) {
-                clearInterval(timerInterval);
-                alert(`Selamat! Level ${level} selesai dengan poin ${poin}.`);
-                level++;
-                jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
-                waktuSisa += 10; // Tambah waktu 10 detik
-                gameContainer.innerHTML = ''; // Bersihkan kartu lama
-                if (level === 3) {
-                    buatPertanyaanLevel3();
-                } else {
-                    buatKartu(jumlahPasangKartu); // Buat kartu untuk level baru
-                    startTimer();
-                }
-            } else if (level === 3) {
-                // Penanganan selesai level 3 ada di fungsi jawabPertanyaanLevel3
+            if (matchedCards.length === jumlahPasangKartu * 2) {
+                // Level selesai
+                
+                setTimeout(() => {
+                    alert(`Selamat! Level ${level} selesai dengan poin ${poin}.`);
+                    level++;
+                    
+                    if (level <= MAX_LEVEL) {
+                        levelDisplay.textContent = level;
+                        jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
+                        waktuSisa += 20; // Tambah waktu 20 detik
+                        
+                        // Khusus level 3, tampilkan pertanyaan
+                        if (level === 3) {
+                            buatPertanyaanLevel3();
+                        } else {
+                            buatKartu(jumlahPasangKartu); // Buat kartu untuk level baru
+                            startTimer(); // Restart timer untuk level baru
+                        }
+                    } else {
+                        // Game selesai setelah mencapai level maksimum
+                        clearInterval(timerInterval);
+                        alert(`Selamat! Anda telah menyelesaikan semua ${MAX_LEVEL} level dengan poin ${poin}!`);
+                    }
+                }, 500);
             }
         }
 
         function buatPertanyaanLevel3() {
+            // Tidak perlu menghentikan timer di level 3 - biarkan tetap berjalan
             gameContainer.innerHTML = `
-                <h2>Pertanyaan Level 3</h2>
-                <p>Siapakah nama asli si koboy yang ada di parkiran cengkeh?</p>
-                <input type="text" id="jawabanPemain" placeholder="Ketik jawaban di sini">
-                <button id="submitJawaban">Jawab</button>
-                <p id="pesanJawaban"></p>
+                <div class="question-container">
+                    <div class="question-title">Pertanyaan Level 3</div>
+                    <div class="question-text">Siapakah nama presiden indonesia saat ini?</div>
+                    <input type="text" id="jawabanPemain" placeholder="Ketik jawaban di sini" class="answer-input">
+                    <button id="submitJawaban" class="submit-button">Jawab</button>
+                    <div id="pesanJawaban" class="feedback-message"></div>
+                </div>
             `;
             const submitJawabanButton = document.getElementById('submitJawaban');
             submitJawabanButton.addEventListener('click', jawabPertanyaanLevel3);
-            // Timer tetap berjalan di level 3
+            
+            // Lanjutkan timer di level 3 - PENTING: JANGAN HENTIKAN TIMER
+            startTimer();
         }
 
         function jawabPertanyaanLevel3() {
@@ -236,33 +323,48 @@
             const pesanJawaban = document.getElementById('pesanJawaban');
             const jawabanPemain = jawabanPemainInput.value.toLowerCase().trim();
 
-            if (jawabanPemain === 'dayat') {
-                clearInterval(timerInterval);
-                alert(`Benar! Level 3 selesai. Lanjut ke level berikutnya?`);
-                level++;
-                jumlahPasangKartu++; // Tingkatkan jumlah pasangan untuk level berikutnya
+            if (jawabanPemain === 'prabowo subianto') {
+                alert(`Benar! Level 3 selesai. Lanjut ke level berikutnya.`);
+                level = 4; // Pastikan level diatur dengan benar
+                levelDisplay.textContent = level;
+                jumlahPasangKartu = 6; // Level 4 memiliki 6 pasang kartu
                 waktuSisa += 7; // Tambah waktu
-                gameContainer.innerHTML = '';
                 buatKartu(jumlahPasangKartu);
-                startTimer();
+                startTimer(); // Mulai timer untuk level baru
             } else {
-                pesanJawaban.textContent = 'Jawaban salah!';
-                // Mungkin tambahkan batasan percobaan atau konsekuensi lainnya
+                pesanJawaban.textContent = 'Jawaban salah! Coba lagi.';
             }
         }
 
         function startTimer() {
+            clearInterval(timerInterval); // Pastikan timer sebelumnya sudah berhenti
             waktuDisplay.textContent = waktuSisa;
-            clearInterval(timerInterval);
+            
             timerInterval = setInterval(() => {
                 waktuSisa--;
                 waktuDisplay.textContent = waktuSisa;
+                
                 if (waktuSisa <= 0) {
                     clearInterval(timerInterval);
                     alert(`Waktu habis! Anda mendapatkan poin ${poin} hingga level ${level}.`);
-                    // Mungkin kita bisa menambahkan opsi untuk memulai kembali game
+                    
+                    // Opsi untuk restart game
+                    if (confirm("Ingin mulai game lagi?")) {
+                        resetGame();
+                    }
                 }
             }, 1000);
+        }
+
+        function resetGame() {
+            level = 1;
+            levelDisplay.textContent = level;
+            poin = 0;
+            poinDisplay.textContent = poin;
+            jumlahPasangKartu = 3;
+            waktuSisa = 50;
+            buatKartu(jumlahPasangKartu);
+            startTimer();
         }
 
         // Inisialisasi game
